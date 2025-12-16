@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北小泳隊行事曆 (NTUEEES)</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .container {
+            max-width: 800px;
+        }
+
+        .page-title {
+            line-height: 1.2;
+        }
+
+        .table-schedule {
+            background: #fff;
+        }
+
+        .table-schedule.table-bordered,
+        .table-schedule.table-bordered th,
+        .table-schedule.table-bordered td {
+            border-color: #000 !important;
+        }
+
+        .table-schedule th,
+        .table-schedule td {
+            vertical-align: top;
+            word-break: break-word;
+        }
+
+        .brand-tagline {
+            letter-spacing: 0.02em;
+        }
+
+        .col-date {
+            min-width: 120px;
+        }
+
+        .col-activity {
+            min-width: 220px;
+        }
+
+        .col-notes {
+            min-width: 180px;
+        }
+
+        .header-banner {
+            width: 100%;
+        }
+
+        .top-nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-actions .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .nav-actions svg {
+            width: 30px;
+            height: 30px;
+        }
+
+        /* Small screens: let the banner drop to next line so it keeps its size */
+        .top-nav .header-banner {
+            flex: 1 1 100%;
+            margin-top: 0.5rem;
+        }
+
+        @media (min-width: 576px) {
+            .top-nav {
+                flex-wrap: nowrap;
+            }
+
+            .top-nav .header-banner {
+                flex: 1 1 auto;
+                margin-top: 0;
+            }
+        }
+
+        .header-banner-img {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-width: 430px;
+            margin-left: auto;
+            margin-right: 0;
+        }
+
+        /* Minimal design target: iPhone Pro Max CSS viewport width 430px */
+        @media (max-width: 430px) {
+            .page-title {
+                font-size: 1.1rem;
+            }
+
+            .table-schedule {
+                font-size: 0.9rem;
+                table-layout: fixed;
+            }
+
+            .col-date {
+                min-width: 0;
+                width: 30%;
+            }
+
+            .col-activity {
+                min-width: 0;
+                width: 38%;
+            }
+
+            .col-notes {
+                min-width: 0;
+                width: 32%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container py-3">
+        <nav class="top-nav mb-3">
+            <div class="nav-actions">
+                <a id="gcalSubscribeBtn" href="#" target="_blank" class="btn btn-outline-primary btn-sm d-none" aria-label="加入 Google 行事曆" title="加入 Google 行事曆">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </a>
+                <button id="shareLinkBtn" type="button" class="btn btn-outline-secondary btn-sm ml-2" aria-label="分享連結" title="分享連結">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"></path>
+                        <path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="header-banner">
+                <img class="header-banner-img" src="./images/logo_1121x203.png" alt="北小泳隊" />
+            </div>
+        </nav>
+
+        <div id="loadingState" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <p class="mt-3 text-muted mb-0">正在同步行事曆...</p>
+        </div>
+
+        <div id="errorState" class="d-none text-center py-5">
+            <div class="alert alert-danger">無法載入行事曆，請檢查網路連線。</div>
+            <button onclick="location.reload()" class="btn btn-primary">重新嘗試</button>
+        </div>
+
+        <main id="calendarContainer" class="d-none">
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm table-schedule">
+                    <thead class="thead-light">
+                        <tr>
+                            <th scope="col" class="col-date">日期</th>
+                            <th scope="col" class="col-activity">活動事項</th>
+                            <th scope="col" class="col-notes">說明</th>
+                        </tr>
+                    </thead>
+                    <tbody id="calendarRows"></tbody>
+                </table>
+            </div>
+
+            <section id="supplementSection" class="d-none mt-4">
+                <h2 class="h6 font-weight-bold mb-2">補充游泳賽事資訊</h2>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm table-schedule">
+                        <thead class="thead-light">
+                            <tr>
+                                <th scope="col" class="col-date">日期</th>
+                                <th scope="col" class="col-activity">活動事項</th>
+                                <th scope="col" class="col-notes">說明</th>
+                            </tr>
+                        </thead>
+                        <tbody id="supplementRows"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // const ENDPOINT = "./calendar.json";
+        const ENDPOINT = "https://script.google.com/macros/s/AKfycbwZ3lJiG6fsmgCp2CVC9gKshkhSkRDoMpq7f0XRMxyncbtMaEJC8MtOorfGiNilE_U/exec?q=calendar";
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function formatEventCellHtml(eventValue) {
+            const raw = String(eventValue ?? "").trim();
+            const cleaned = raw.replace(/^\s*[o○]\s*/i, "").trim();
+            return `○ ${escapeHtml(cleaned || raw)}`;
+        }
+
+        function parseYmdToLocalDate(dateStr) {
+            // Expects YYYY-MM-DD. Uses local date to avoid timezone shifting.
+            const match = /^\s*(\d{4})-(\d{2})-(\d{2})\s*$/.exec(String(dateStr ?? ""));
+            if (!match) return null;
+            const year = Number(match[1]);
+            const month = Number(match[2]);
+            const day = Number(match[3]);
+            const d = new Date(year, month - 1, day);
+            return Number.isNaN(d.getTime()) ? null : d;
+        }
+
+        function formatSingleDate(d) {
+            const weekday = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            return { y, m, dd, weekday, textFull: `${y}/${m}/${dd}(${weekday})`, textShort: `${m}/${dd}(${weekday})` };
+        }
+
+        function formatDateCellHtml(dateStr, endDateStr) {
+            const startDate = parseYmdToLocalDate(dateStr);
+            if (!startDate) return escapeHtml(dateStr);
+
+            const startFmt = formatSingleDate(startDate);
+            const endDate = endDateStr ? parseYmdToLocalDate(endDateStr) : null;
+            if (!endDate) return escapeHtml(startFmt.textFull);
+
+            const endFmt = formatSingleDate(endDate);
+            const endText = startFmt.y === endFmt.y ? endFmt.textShort : endFmt.textFull;
+            // Requirement: date on one line with '~' after date; end_date on the next line.
+            return `${escapeHtml(startFmt.textFull)}~<br>${escapeHtml(endText)}`;
+        }
+
+        function compareByDateAsc(a, b) {
+            const da = parseYmdToLocalDate(a?.date);
+            const db = parseYmdToLocalDate(b?.date);
+            if (da && db) return da.getTime() - db.getTime();
+            if (da && !db) return -1;
+            if (!da && db) return 1;
+            return String(a?.date ?? "").localeCompare(String(b?.date ?? ""), "zh-Hant");
+        }
+
+        function filterUpcoming(events) {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            return (events ?? []).filter(ev => {
+                const effectiveEnd = parseYmdToLocalDate(ev?.end_date || ev?.date);
+                if (!effectiveEnd) return true;
+                return today.getTime() <= effectiveEnd.getTime();
+            });
+        }
+
+        function renderTableRows(targetTbody, events) {
+            if (!targetTbody) return;
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            targetTbody.innerHTML = events.map(ev => {
+            const activityHtml = formatEventCellHtml(ev?.event);
+                const location = escapeHtml(ev?.location ?? "");
+                const desc = escapeHtml(ev?.description ?? "");
+
+                const notesParts = [location, desc].filter(Boolean);
+                const notesHtml = notesParts.length ? notesParts.join("<br>") : "";
+
+                const dateCell = formatDateCellHtml(ev?.date, ev?.end_date);
+
+                const effectiveEnd = parseYmdToLocalDate(ev?.end_date || ev?.date);
+                const isPast = Boolean(effectiveEnd) && today.getTime() > effectiveEnd.getTime();
+                const rowClass = isPast ? "table-secondary text-muted" : "";
+
+                return `
+                    <tr class="${rowClass}">
+                        <td>${dateCell}</td>
+                        <td>${activityHtml}</td>
+                        <td>${notesHtml}</td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        function normalizeCalendarData(data) {
+            if (!data || typeof data !== "object") {
+                return { mainEvents: [], supplementEvents: [] };
+            }
+
+            // New format (preferred): { teamCalendar: [...], supplementCalendar: [...] }
+            // Also accept a common misspelling: teamCaldendar
+            const teamArr = Array.isArray(data.teamCalendar)
+                ? data.teamCalendar
+                : (Array.isArray(data.teamCaldendar) ? data.teamCaldendar : null);
+            const supplementArr = Array.isArray(data.supplementCalendar) ? data.supplementCalendar : null;
+
+            if (teamArr || supplementArr) {
+                return {
+                    mainEvents: (teamArr ?? []).slice(),
+                    supplementEvents: (supplementArr ?? []).slice(),
+                };
+            }
+
+            // Legacy format: { calendar: [...] } with optional `type`
+            if (Array.isArray(data.calendar)) {
+                const all = data.calendar.slice();
+                const hasType = all.some(ev => ev && ev.type != null);
+
+                if (!hasType) {
+                    return { mainEvents: all, supplementEvents: [] };
+                }
+
+                const supplementEvents = all.filter(ev => String(ev?.type ?? "").toLowerCase() === "supplement");
+                const mainEvents = all.filter(ev => String(ev?.type ?? "").toLowerCase() !== "supplement");
+                return { mainEvents, supplementEvents };
+            }
+
+            return { mainEvents: [], supplementEvents: [] };
+        }
+
+        async function init() {
+            const loadingEl = document.getElementById("loadingState");
+            const errorEl = document.getElementById("errorState");
+            const containerEl = document.getElementById("calendarContainer");
+            const calendarRowsEl = document.getElementById("calendarRows");
+            const supplementSectionEl = document.getElementById("supplementSection");
+            const supplementRowsEl = document.getElementById("supplementRows");
+            const gcalBtn = document.getElementById("gcalSubscribeBtn");
+            const shareBtn = document.getElementById("shareLinkBtn");
+
+            if (shareBtn) {
+                shareBtn.addEventListener("click", async () => {
+                    const url = window.location.href;
+                    const title = document.title;
+
+                    try {
+                        if (navigator.share) {
+                            await navigator.share({ title, url });
+                            return;
+                        }
+                    } catch (_) {
+                        // ignore share cancellation
+                    }
+
+                    try {
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            await navigator.clipboard.writeText(url);
+                            const prevTitle = shareBtn.title;
+                            shareBtn.title = "已複製連結";
+                            setTimeout(() => (shareBtn.title = prevTitle), 1500);
+                            return;
+                        }
+                    } catch (_) {
+                        // ignore clipboard failures
+                    }
+                }, { once: true });
+            }
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+            try {
+                const response = await fetch(ENDPOINT, { signal: controller.signal, cache: "no-store" });
+                if (!response.ok) throw new Error("Network response error");
+                const data = await response.json();
+
+                const normalized = normalizeCalendarData(data);
+                const rawMainEvents = normalized.mainEvents.slice().sort(compareByDateAsc);
+                const rawSupplementEvents = normalized.supplementEvents.slice().sort(compareByDateAsc);
+
+                if (!rawMainEvents.length && !rawSupplementEvents.length) {
+                    throw new Error("Invalid data format");
+                }
+
+                const mainEvents = filterUpcoming(rawMainEvents);
+                const supplementEvents = filterUpcoming(rawSupplementEvents);
+
+                renderTableRows(calendarRowsEl, mainEvents);
+
+                if (supplementEvents.length) {
+                    renderTableRows(supplementRowsEl, supplementEvents);
+                    supplementSectionEl.classList.remove("d-none");
+                }
+
+                if (data.googleCalendarLink && gcalBtn) {
+                    gcalBtn.href = data.googleCalendarLink;
+                    gcalBtn.classList.remove("d-none");
+                }
+
+                loadingEl.classList.add("d-none");
+                containerEl.classList.remove("d-none");
+            } catch (err) {
+                console.error("Fetch Error:", err);
+                loadingEl.classList.add("d-none");
+                errorEl.classList.remove("d-none");
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
