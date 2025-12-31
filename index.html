@@ -132,9 +132,16 @@
                 })
                 .then(data => {
                     clearTimeout(timeoutId);
+
+                    // 1️⃣ 先拿到後端給的 message
+                    let message = data.message || "";
+                    
+                    // 2️⃣ 直接在這裡處理字串
+                    message = stripClassReminderIfCancelled(message);
+                    
                     // Populate message preview
-                    $('#messagePreview').text(data.message);
-                    const encodedMessage = encodeURIComponent(data.message);
+                    $('#messagePreview').text(message);
+                    const encodedMessage = encodeURIComponent(message);
                     $('#lineShareLink').attr('href', `https://line.me/R/share?text=${encodedMessage}`);
                 })
                 .catch(error => {
@@ -198,6 +205,20 @@
                 }, 1500);
             }
         });
+    </script>
+
+    <script>
+        function stripClassReminderIfCancelled(message) {
+          const tokens = ["謝謝值班家長", "感謝值班家長"];
+        
+          for (const t of tokens) {
+            const idx = message.indexOf(t);
+            if (idx !== -1) {
+              return message.substring(0, idx).trimEnd();
+            }
+          }
+          return message;
+        }
     </script>
 </body>
 
