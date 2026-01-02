@@ -138,6 +138,7 @@
                     
                     // 2️⃣ 直接在這裡處理字串
                     message = stripClassReminderIfCancelled(message);
+                    message = formatMessage(message);
                     
                     // Populate message preview
                     $('#messagePreview').text(message);
@@ -219,6 +220,22 @@
         
           return message.substring(0, cut).trimEnd();
         }
+
+        function formatMessage(message) {
+          if (!message) return message;
+        
+          let msg = message;
+        
+          // 1️⃣ 移除「開頭所有空白行 / 空白字元」
+          msg = msg.replace(/^\s+/, '');
+        
+          // 2️⃣ 半形冒號 → 全形冒號（只針對欄位名）
+          msg = msg.replace(/日期:/g, '日期：');
+          msg = msg.replace(/地點:/g, '地點：');
+        
+          return msg;
+        }
+
     </script>
 </body>
 
