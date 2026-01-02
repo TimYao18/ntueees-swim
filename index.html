@@ -229,14 +229,13 @@
           // 1️⃣ 移除「開頭所有空白行 / 空白字元」
           msg = msg.replace(/^\s+/, '');
         
-          // 移除「全形冒號後面的多餘空白」
-          msg = msg.replace(/日期：\s*/g, '日期：');
-          msg = msg.replace(/地點：\s*/g, '地點：');
-          msg = msg.replace(/值班家長：\s*/g, '值班家長：');
-
+          // 2️⃣ 「欄位名 + 冒號」統一成全形，並移除冒號後所有空白
+          msg = msg.replace(/日期[:：]\s*/g, '日期：');
+          msg = msg.replace(/地點[:：]\s*/g, '地點：');
+          msg = msg.replace(/值班家長[:：]\s*/g, '值班家長：');
+        
           return msg;
         }
-
     </script>
 </body>
 
