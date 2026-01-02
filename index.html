@@ -232,7 +232,8 @@
           // 2️⃣ 半形冒號 → 全形冒號（只針對欄位名）
           msg = msg.replace(/日期:/g, '日期：');
           msg = msg.replace(/地點:/g, '地點：');
-        
+          msg = msg.replace(/值班家長:/g, '值班家長：');
+
           return msg;
         }
 
